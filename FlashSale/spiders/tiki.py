@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+import time
+
 import scrapy
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import TakeFirst
-from FlashSale.items import FlashsaleItem
-import time
 from scrapy.utils.project import get_project_settings
 
+from FlashSale.items import FlashsaleItem
 
 MAXPAGE = 100
+
 
 class TikiSpider(scrapy.Spider):
     name = 'tiki'
@@ -18,7 +20,7 @@ class TikiSpider(scrapy.Spider):
     next_page_xpath = './ul/li/a[@class="next"]'
 
     def start_requests(self):
-        yield scrapy.Request(url = TikiSpider.start_url.format(1), callback = self.parseCategories)
+        yield scrapy.Request(url=TikiSpider.start_url.format(1), callback=self.parseCategories)
         # driver.quit()
 
     def parseCategories(self, response):
@@ -29,7 +31,7 @@ class TikiSpider(scrapy.Spider):
         # category_id = category_ids[0]
         for category_id in category_ids:
             category_url = response.url + '&category_ids=' + category_id
-            yield scrapy.Request(url = category_url, callback = self.parseContents)
+            yield scrapy.Request(url=category_url, callback=self.parseContents)
             time.sleep(1)
 
     def parseContents(self, response):
@@ -41,7 +43,7 @@ class TikiSpider(scrapy.Spider):
             if deal_item.xpath('./p[@class="btn deal-out"]') != []:
                 continue
 
-            loader = ItemLoader(item = FlashsaleItem(), selector = deal_item)
+            loader = ItemLoader(item=FlashsaleItem(), selector=deal_item)
             loader.default_output_processor = TakeFirst()
 
             loader.add_xpath('name', './div[@class="title"]/text()')
@@ -49,7 +51,8 @@ class TikiSpider(scrapy.Spider):
             loader.add_value('link', deal_item.attrib['href'])
             loader.add_xpath('origin_price', './div[@class="price-sale"]/text()')
             loader.add_xpath('discount_price', './div[@class="price-sale"]/span/text()')
-            loader.add_xpath('status', './div[@class="deal-status"]/div[@class="process-bar"]/span[@class="text"]/text()')
+            loader.add_xpath('status',
+                             './div[@class="deal-status"]/div[@class="process-bar"]/span[@class="text"]/text()')
             loader.add_xpath('progress_status', './div[@class="deal-status"]/div/div/@style')
             loader.add_value('start_time', 'now')
             loader.add_xpath('end_time', './div[@class="deal-status"]/div[@class="started"]/div/span/text()')
@@ -63,8 +66,8 @@ class TikiSpider(scrapy.Spider):
         next_page = list_pager.xpath(TikiSpider.next_page_xpath)
         if (current_page < MAXPAGE) and (next_page != []):
             next_page = current_page + 1
-            next_page_url = response.url.replace('page='+str(current_page), 'page='+str(next_page))
-            yield scrapy.Request(url = next_page_url, callback = self.parseContents)
+            next_page_url = response.url.replace('page=' + str(current_page), 'page=' + str(next_page))
+            yield scrapy.Request(url=next_page_url, callback=self.parseContents)
             time.sleep(1)
         # except:
         #     print(list_pager.extract())

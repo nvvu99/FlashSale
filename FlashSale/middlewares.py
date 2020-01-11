@@ -5,11 +5,11 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+# import requests
 from scrapy import signals
 from scrapy.http import HtmlResponse
-from selenium import webdriver
 from scrapy.utils.project import get_project_settings
-import requests
+# from selenium import webdriver
 
 
 class FlashsaleSpiderMiddleware(object):
@@ -59,7 +59,7 @@ class FlashsaleSpiderMiddleware(object):
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
 
-
+'''
 class FlashsaleSeleniumDownloaderMiddleware(object):
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
@@ -73,7 +73,7 @@ class FlashsaleSeleniumDownloaderMiddleware(object):
         options.add_argument('--disable-gpu')
         settings = get_project_settings()
         chrome_path = settings.get('CHROME_PATH')
-        self.driver = webdriver.Chrome(executable_path = chrome_path, chrome_options = options)
+        self.driver = webdriver.Chrome(executable_path=chrome_path, chrome_options=options)
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -97,7 +97,7 @@ class FlashsaleSeleniumDownloaderMiddleware(object):
         self.driver.get(request.url)
         body = self.driver.page_source
         # self.driver.close()
-        return HtmlResponse(request.url, body = body, encoding = 'utf-8', request = request)
+        return HtmlResponse(request.url, body=body, encoding='utf-8', request=request)
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
@@ -159,10 +159,10 @@ class FlashsaleRequestsDownloaderMiddleware(object):
         if method == 'GET':
             res = self.session.get(request.url)
         elif method == 'POST':
-            res = self.session.post(request.url, data = body)
+            res = self.session.post(request.url, data=body)
         # body = res.text
         # self.driver.close()
-        return HtmlResponse(res.url, body = res.content, encoding = 'utf-8', request = request)
+        return HtmlResponse(res.url, body=res.content, encoding='utf-8', request=request)
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.
@@ -191,3 +191,4 @@ class FlashsaleRequestsDownloaderMiddleware(object):
         pass
         # self.driver.quit()
         # spider.logger.info('Spider closed: %s' % spider.name)
+'''

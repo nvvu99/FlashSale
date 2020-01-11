@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+import json
+
 import scrapy
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import TakeFirst
-from FlashSale.items import CategoryItem, TikiItem
 from scrapy.utils.project import get_project_settings
-import time
-import json
+
+from FlashSale.items import CategoryItem, TikiItem
 
 MAX_PAGE = 1
 NOW = 0
@@ -22,10 +23,10 @@ class TikiSpider(scrapy.Spider):
 
     def start_requests(self):
         yield scrapy.Request(
-            url = self.start_url,
-            method = 'GET',
-            callback = self.parseCategory
-            )
+            url=self.start_url,
+            method='GET',
+            callback=self.parseCategory
+        )
 
     def parseCategory(self, response):
         meta = response.meta
@@ -35,7 +36,7 @@ class TikiSpider(scrapy.Spider):
 
         categories_dom = response.xpath(categories_dom_xpath)
         for category_dom in categories_dom:
-            category_loader = ItemLoader(item = CategoryItem(), selector = category_dom)
+            category_loader = ItemLoader(item=CategoryItem(), selector=category_dom)
             category_loader.add_xpath('category_id', category_url_xpath)
             category_loader.add_xpath('category_name', category_name_xpath)
             yield category_loader.load_item()
@@ -43,21 +44,21 @@ class TikiSpider(scrapy.Spider):
             category_id = category_loader.get_output_value('category_id')
             page = 1
             yield scrapy.Request(
-                url = self.sale_urls[NOW].format(category_id, page), 
-                callback = self.parseProduct, 
-                meta = {
+                url=self.sale_urls[NOW].format(category_id, page),
+                callback=self.parseProduct,
+                meta={
                     'time': NOW,
                     'category_id': category_id
-                    }
-                )
-            yield scrapy.Request(
-                url = self.sale_urls[COMING].format(category_id, page), 
-                callback = self.parseProduct, 
-                meta = {
-                    'time': COMING,
-                    'category_id': category_id
-                    }
-                )
+                }
+            )
+            # yield scrapy.Request(
+            #     url=self.sale_urls[COMING].format(category_id, page),
+            #     callback=self.parseProduct,
+            #     meta={
+            #         'time': COMING,
+            #         'category_id': category_id
+            #     }
+            # )
 
     def parseProduct(self, response):
         # Parse current page
@@ -68,7 +69,7 @@ class TikiSpider(scrapy.Spider):
 
         products = content['data']
         for product in products:
-            sale_item_loader = ItemLoader(item = TikiItem())
+            sale_item_loader = ItemLoader(item=TikiItem())
             sale_item_loader.default_output_processor = TakeFirst()
 
             product_info = product['product']
@@ -94,7 +95,10 @@ class TikiSpider(scrapy.Spider):
         last_page = paging['last_page']
         if current_page < last_page and current_page < MAX_PAGE:
             yield scrapy.Request(
-                url = self.sale_urls[time].format(category_id, current_page + 1), 
-                callback = self.parseProduct, 
-                meta = {'category_id': category_id}
-                )
+                url=self.sale_urls[time].format(category_id, current_page + 1),
+                callback=self.parseProduct,
+                meta={
+                    'time': time,
+                    'category_id': category_id
+                }
+            )

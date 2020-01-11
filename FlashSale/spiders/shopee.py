@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-import scrapy
-from scrapy.loader import ItemLoader
-from scrapy.loader.processors import TakeFirst
-from FlashSale.items import FlashsaleItem
-import time
-from scrapy.utils.project import get_project_settings
 import json
+
+import scrapy
+from scrapy.utils.project import get_project_settings
 
 
 class ShopeeSpider(scrapy.Spider):
@@ -14,7 +11,7 @@ class ShopeeSpider(scrapy.Spider):
     urls = settings.get('SHOPEE_API')
 
     def start_requests(self):
-        yield scrapy.Request(url = urls[0], callback = self.parseSessions)
+        yield scrapy.Request(url=urls[0], callback=self.parseSessions)
 
     def parseSessions(self, response):
         contents = json.loads(request.text)
