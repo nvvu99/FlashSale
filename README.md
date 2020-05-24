@@ -1,6 +1,6 @@
 # Flashsale Scraper
 
-This projects used (Scrapy)[https://scrapy.org/] to scrape the flashsale products from (tiki.vn)[https://tiki.vn] and (sendo.vn)[https://sendo.vn]
+This projects used [Scrapy](https://scrapy.org/) to scrape the flashsale products from [tiki.vn](https://tiki.vn) and [sendo.vn](https://sendo.vn)
 
 # Run this project
 * Clone this project:
@@ -29,7 +29,8 @@ The demo of this project is at the folder Demo. Create a folder named `Product` 
   "name": "Quạt USB mini Cho Điện Thoại iPhone NS 5600", 
   "image": "https://salt.tikicdn.com/cache/280x280/ts/product/19/f4/47/f5d14f10c8bfb4ba9dbe39c83fe1db5a.jpg", 
   "category_id": 1882, 
-  "url": "https://tiki.vn/quat-usb-mini-cho-dien-thoai-iphone-ns-5600-p16217211.html?spid=54550261", "origin_price": 105000, 
+  "url": "https://tiki.vn/quat-usb-mini-cho-dien-thoai-iphone-ns-5600-p16217211.html?spid=54550261", 
+  "origin_price": 105000, 
   "discount_price": 15000, 
   "quantity": 8, 
   "remain": 8, 
