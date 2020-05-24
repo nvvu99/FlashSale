@@ -19,7 +19,7 @@ scrapy crawl
 * The scraped data will be stored at two file `category.json` and `product.json`
 
 # Project demo
-The demo of this project is at the folder Demo. Just run the file flashsale.exe.
+The demo of this project is at the folder Demo. Create a folder named `Product` and run the file `flashsale.exe`.
 
 # Sample scraped data
 * Product
