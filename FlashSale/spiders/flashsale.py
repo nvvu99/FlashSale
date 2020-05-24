@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
 
 # from FlashSale.spiders.sendo_api import SendoSpider
 # from FlashSale.spiders.tiki_api import TikiSpider
@@ -12,28 +11,17 @@ from scrapy.utils.project import get_project_settings
 # process2.crawl(TikiSpider)
 # process2.start()
 
-# class FlashsaleSpider(scrapy.Spider):
-# name = 'flashsale'
-# allowed_domains = ['flashsale']
-# start_urls = ['http://flashsale/']
-
-# def __init__(self):
-#     self.tiki_spider = TikiSpider()
-#     self.sendo_spider = SendoSpider()
-
-# def start_requests(self):
-#     self.tiki_spider.start_requests()
-#     self.sendo_spider.start_requests()
 import os
 import scrapy
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.log import configure_logging
+from scrapy.utils.project import get_project_settings
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from FlashSale.spiders.sendo_api import SendoSpider
-from FlashSale.spiders.tiki_api import TikiSpider
+from FlashSale.spiders.sendo import SendoSpider
+from FlashSale.spiders.tiki import TikiSpider
 
 configure_logging()
 settings = get_project_settings()
@@ -59,8 +47,8 @@ runner = CrawlerRunner(settings)
 def crawl():
     yield runner.crawl(SendoSpider)
     yield runner.crawl(TikiSpider)
+    # yield runner.crawl(Tiki)
     reactor.stop()
 
 crawl()
 reactor.run()
-input('Press any key to exit.')

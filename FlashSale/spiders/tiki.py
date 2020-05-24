@@ -1,81 +1,110 @@
 # -*- coding: utf-8 -*-
-import time
+import json
 
 import scrapy
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import TakeFirst
 from scrapy.utils.project import get_project_settings
 
-from FlashSale.items import FlashsaleItem
+from FlashSale.items import CategoryItem, TikiItem
 
-MAXPAGE = 100
+# maximum of number of page for each category of products
+MAX_PAGE = 1 
+
+ONSALE = 0 
+COMING = 1
 
 
 class TikiSpider(scrapy.Spider):
     name = 'tiki'
-    settings = get_project_settings()
-    start_url = settings.get('TIKI')
-    list_pager_xpath = '//div[@class="list-pager"]'
-    current_page_xpath = './ul/li/span[@class="current"]/text()'
-    next_page_xpath = './ul/li/a[@class="next"]'
+
+    def __init__(self):
+        settings = get_project_settings()
+        self.start_url = settings.get('TIKI_FLASHSALE').format(1)
+        self.sale_urls = settings.get('TIKI')
 
     def start_requests(self):
-        yield scrapy.Request(url=TikiSpider.start_url.format(1), callback=self.parseCategories)
-        # driver.quit()
+        yield scrapy.Request(
+            url=self.start_url,
+            method='GET',
+            callback=self.parse_category
+        )
 
-    def parseCategories(self, response):
-        categories_xpath = '//div[@class="side-bar"]/ul[@class="filter-category"]'
-        category_ids_xpath = './li/label/input/@value'
-        category_ids = response.xpath(categories_xpath).xpath(category_ids_xpath).extract()
+    def parse_category(self, response):
+        meta = response.meta
+        categories_dom_xpath = '/html/body/header/div[@class="main-nav"]/div/nav/ul/li'
+        category_url_xpath = './a/@href'
+        category_name_xpath = './a/span/text()'
 
-        # category_id = category_ids[0]
-        for category_id in category_ids:
-            category_url = response.url + '&category_ids=' + category_id
-            yield scrapy.Request(url=category_url, callback=self.parseContents)
-            time.sleep(1)
+        categories_dom = response.xpath(categories_dom_xpath)
+        for category_dom in categories_dom:
+            category_loader = ItemLoader(item=CategoryItem(), selector=category_dom)
+            category_loader.add_xpath('category_id', category_url_xpath)
+            category_loader.add_xpath('category_name', category_name_xpath)
+            yield category_loader.load_item()
 
-    def parseContents(self, response):
-        # parse current page
-        deal_items_xpath = '//div[@class="product-listing"]/div[@class="items"]/a[@class="deal-item"]'
-        deal_items = response.xpath(deal_items_xpath)
-        for deal_item in deal_items:
-            # check if item is deal out
-            if deal_item.xpath('./p[@class="btn deal-out"]') != []:
-                continue
+            category_id = category_loader.get_output_value('category_id')
+            page = 1
 
-            loader = ItemLoader(item=FlashsaleItem(), selector=deal_item)
-            loader.default_output_processor = TakeFirst()
+            # request to onsale product page
+            yield scrapy.Request(
+                url=self.sale_urls[ONSALE].format(category_id, page),
+                callback=self.parse_product,
+                meta={
+                    'time': ONSALE,
+                    'category_id': category_id
+                }
+            )
 
-            loader.add_xpath('name', './div[@class="title"]/text()')
-            loader.add_xpath('image', './div[@class="image"]/img/@src')
-            loader.add_value('link', deal_item.attrib['href'])
-            loader.add_xpath('origin_price', './div[@class="price-sale"]/text()')
-            loader.add_xpath('discount_price', './div[@class="price-sale"]/span/text()')
-            loader.add_xpath('status',
-                             './div[@class="deal-status"]/div[@class="process-bar"]/span[@class="text"]/text()')
-            loader.add_xpath('progress_status', './div[@class="deal-status"]/div/div/@style')
-            loader.add_value('start_time', 'now')
-            loader.add_xpath('end_time', './div[@class="deal-status"]/div[@class="started"]/div/span/text()')
+            # request to coming sale product page
+            yield scrapy.Request(
+                url=self.sale_urls[COMING].format(category_id, page),
+                callback=self.parse_product,
+                meta={
+                    'time': COMING,
+                    'category_id': category_id
+                }
+            )
 
-            yield loader.load_item()
+    def parse_product(self, response):
+        # Parse current page
+        meta = response.meta
+        category_id = meta['category_id']
+        time = meta['time'] # onsale or coming
+        content = json.loads(response.text)
 
-        # move to next page
-        list_pager = response.xpath(TikiSpider.list_pager_xpath)
-        # try:
-        current_page = int(list_pager.xpath(TikiSpider.current_page_xpath).extract_first())
-        next_page = list_pager.xpath(TikiSpider.next_page_xpath)
-        if (current_page < MAXPAGE) and (next_page != []):
-            next_page = current_page + 1
-            next_page_url = response.url.replace('page=' + str(current_page), 'page=' + str(next_page))
-            yield scrapy.Request(url=next_page_url, callback=self.parseContents)
-            time.sleep(1)
-        # except:
-        #     print(list_pager.extract())
-        #     current_page = list_pager.xpath(TikiSpider.current_page_xpath).extract_first()
-        #     print(type(current_page))
+        products = content['data']
+        for product in products:
+            sale_item_loader = ItemLoader(item=TikiItem())
+            sale_item_loader.default_output_processor = TakeFirst()
 
-    def test(self, response):
-        list_pager = response.xpath(TikiSpider.list_pager_xpath)
-        current_page = int(list_pager.xpath(TikiSpider.current_page_xpath).extract_first())
-        next_page = list_pager.xpath(TikiSpider.next_page_xpath)
-        return current_page
+            product_info = product['product']
+            progress = product['progress']
+            sale_item_loader.add_value('product_id', product_info['id'])
+            sale_item_loader.add_value('name', product_info['name'])
+            sale_item_loader.add_value('image', product_info['thumbnail_url'])
+            sale_item_loader.add_value('category_id', category_id)
+            sale_item_loader.add_value('url', product_info['url_path'])
+            sale_item_loader.add_value('origin_price', product_info['list_price'])
+            sale_item_loader.add_value('discount_price', product_info['price'])
+            sale_item_loader.add_value('quantity', progress['qty'])
+            sale_item_loader.add_value('remain', progress['qty_remain'])
+            sale_item_loader.add_value('start_time', product['special_from_date'])
+            sale_item_loader.add_value('end_time', product['special_to_date'])
+            sale_item_loader.add_value('rating', product_info['rating_average'])
+            sale_item_loader.add_value('review', product_info['review_count'])
+            yield sale_item_loader.load_item()
+
+        # request to next product page
+        paging = content['paging']
+        current_page = paging['current_page']
+        last_page = paging['last_page']
+        if current_page < last_page and current_page < MAX_PAGE:
+            yield scrapy.Request(
+                url=self.sale_urls[time].format(category_id, current_page + 1),
+                callback=self.parse_product,
+                meta={
+                    'time': time,
+                    'category_id': category_id
+                }
+            )

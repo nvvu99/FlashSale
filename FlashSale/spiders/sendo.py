@@ -8,6 +8,7 @@ from scrapy.utils.project import get_project_settings
 
 from FlashSale.items import CategoryItem, SendoItem
 
+# maximum of number of page for each category of products
 MAX_PAGE = 1
 
 
@@ -16,23 +17,22 @@ class SendoSpider(scrapy.Spider):
 
     def __init__(self):
         settings = get_project_settings()
-        self.urls = settings.get('SENDO_API')
+        self.urls = settings.get('SENDO')
 
     def start_requests(self):
         deal_time_url = self.urls[1]
         yield scrapy.Request(
             url=deal_time_url,
             method='POST',
-            callback=self.parseDealTime
+            callback=self.parse_deal_time
         )
 
-    def parseDealTime(self, response):
+    def parse_deal_time(self, response):
+
         content = json.loads(response.text)
         data = content['data']
         deal_times = data['slots']
-        # add end time
-        # end_time = start_time of next slot
-        # start_time = deal_time['slot']
+
         length = len(deal_times)
         for i in range(0, length - 1):
             deal_times[i]['end_time'] = deal_times[i + 1]['slot']
@@ -42,16 +42,15 @@ class SendoSpider(scrapy.Spider):
         category_url = self.urls[0]
         yield scrapy.Request(
             url=category_url,
-            callback=self.parseCategory,
+            callback=self.parse_category,
             meta={'deal_times': deal_times}
         )
 
-    def parseCategory(self, response):
+    def parse_category(self, response):
         deal_times = response.meta['deal_times']
         content = json.loads(response.text)
         categories = content['data']
         # delete unneeded categories
-        del categories[0]
         del categories[0]
 
         for category in categories:
@@ -73,7 +72,7 @@ class SendoSpider(scrapy.Spider):
                 url=self.urls[2],
                 method='POST',
                 body=json.dumps(request_payload),
-                callback=self.parseProduct,
+                callback=self.parse_product,
                 meta={
                     'category_id': category['category_group_id'],
                     'deal_time': deal_time,
@@ -81,7 +80,7 @@ class SendoSpider(scrapy.Spider):
                 }
             )
 
-    def parseProduct(self, response):
+    def parse_product(self, response):
         # Parse current page
         meta = response.meta
         category_id = meta['category_id']
@@ -107,7 +106,7 @@ class SendoSpider(scrapy.Spider):
             sale_item_loader.add_value('end_time', deal_time['end_time'])
             yield sale_item_loader.load_item()
 
-        # To next page
+        # request to next product page
         request_payload = meta['request_payload']
         if request_payload['page'] < MAX_PAGE:
             request_payload['page'] += 1
@@ -115,7 +114,7 @@ class SendoSpider(scrapy.Spider):
                 url=self.urls[2],
                 method='POST',
                 body=json.dumps(request_payload),
-                callback=self.parseProduct,
+                callback=self.parse_product,
                 meta={
                     'category_id': category_id,
                     'deal_time': deal_time,

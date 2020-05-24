@@ -8,7 +8,6 @@ import os
 import json
 import time
 from pprint import pprint
-from pymongo import MongoClient
 
 from scrapy import signals
 from scrapy.utils.project import get_project_settings
@@ -20,21 +19,14 @@ server = settings.get('MONGO_SERVER')
 port = settings.get('MONGO_PORT')
 db_name = settings.get('MONGO_DB')
 collection_name = settings.get('MONGO_COLLECTION')
-# flashsale_dir = 'Product'
 
-# try:
-#     os.mkdir(flashsale_dir)
-# except Exception as e:
-#     pass
-
-# os.chdir(flashsale_dir)
 category_file_name = 'category.json'
 product_file_name = 'product.json'
 category_file = open(category_file_name, 'a', encoding='utf-16')
 product_file = open(product_file_name, 'w', encoding='utf-16')
-# category_file = settings.get('category_file')
 
 try:
+    from pymongo import MongoClient
     client = MongoClient(server, port)
     db = client[db_name]
     category_collection = db[collection_name[0]]

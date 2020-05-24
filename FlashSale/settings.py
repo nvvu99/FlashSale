@@ -14,19 +14,13 @@ BOT_NAME = 'FlashSale'
 SPIDER_MODULES = ['FlashSale.spiders']
 NEWSPIDER_MODULE = 'FlashSale.spiders'
 
-TIKI_HOME = 'https://tiki.vn'
 TIKI_FLASHSALE = 'https://tiki.vn/deal-hot?tab=now&page={}'
-TIKI_API = [
+TIKI = [
     'https://tiki.vn/api/v2/events/deals/?category_ids={}&type=now&page={}&per_page=20',
     'https://tiki.vn/api/v2/events/deals/?category_ids={}&type=coming&page={}&per_page=20',
 ]
-SHOPEE = 'https://shoppe.vn'
-SHOPEE_API = [
-    'https://shopee.vn/api/v2/flash_sale/get_all_sessions'
-    'https://shopee.vn/api/v2/flash_sale/flash_sale_get_items?',
-]
-LAZADA = 'https://lazada.vn'
-SENDO_API = [
+
+SENDO = [
     'https://api.sendo.vn/flash-deal/category-group?special_status=0',
     'https://api.sendo.vn/flash-deal/ajax-deal/',
     'https://api.sendo.vn/flash-deal/ajax-product/',
@@ -88,8 +82,8 @@ DOWNLOAD_DELAY = 5
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'FlashSale.pipelines.DuplicateItemPipeline': 200,
-    'FlashSale.pipelines.ToDatabasePipeline': 300,
+    # 'FlashSale.pipelines.DuplicateItemPipeline': 200,
+    # 'FlashSale.pipelines.ToDatabasePipeline': 300,
     'FlashSale.pipelines.ToJsonFilePipeline': 400,
 }
 
